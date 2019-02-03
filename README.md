@@ -1,5 +1,16 @@
+[//]: # (Image References)
+
+[image1]: ./images/mpc1.png "Simulator screenshot"
+
 # CarND-Controls-MPC
-Self-Driving Car Engineer Nanodegree Program
+
+The purpose of this project is to implement a Model Predictive Control that handles a 100millisecond latency and drives a car around the simulator track. The controller evaluates the steering angle and the throttle that is returned to the simulator.
+
+#Implementation
+First we had to assign values for N and dt. Since we did not want to slow down the simulation we set the value of N to 10 and stated with a relatively safe dt of 0.1. This was later changed to 0.075 as we noticed that smaller dt values produced more consistent results. The cost functions used were identical to those in the mpc quiz. We multiplied the cost functions with a relatively large value of gain to avoid extreme steering angles and lowered down those values until we obtained a smooth trajectory. We also used the same initialization and constrains equations as in the mpc quiz. In fact the only modification was done to the psi and epsi equations, as suggested, in order to compensate for the simulator (delta value is positive on right turns). Additionally, we fitted a third degree polynomial to the waypoints. The reference speed used was set approximatelly to the same average speed we obtained while driving around the track.The values returned from the simulator, had to be converted from the map to the vehicule coordinate system by sifting the origin and rotating. Initially, the latency, introduced in the form of a thread sleep command, was commented out, in order to simplify the tuning process. Once we obtained a smooth behavior, the latency was re-introduced. In order to compensate for that latency we used the kinematic equation to predict the next state used in solved function. 
+The model was able to drive the car around without exiting the track. A screenshot from the simulator can be seen in the figure below:
+
+![alt text][image1]
 
 ---
 
