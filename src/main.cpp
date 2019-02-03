@@ -95,15 +95,14 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
-
+          double steer_value = j[1]["steering_angle"];
+          double throttle_value = j[1]["throttle"]; 
           /*
           * TODO: Calculate steering angle and throttle using MPC.
           *
           * Both are in between [-1, 1].
           *
           */
-          double steer_value;
-          double throttle_value;
 
           Eigen::VectorXd ptsx_car = Eigen::VectorXd::Map(ptsx.data(),6);
           Eigen::VectorXd ptsy_car = Eigen::VectorXd::Map(ptsy.data(),6);
@@ -119,15 +118,27 @@ int main() {
           double cte = polyeval(coeffs,0);
           double epsi = -atan(coeffs[1]);
 
+          double Lf = 2.67;
+          double latency = 0.1; //Depends on thread sleep value
+
+          double px_next = 0, py_next=0, psi_next=0, v_next=0, cte_next=0, epsi_next=0;
+          
+          /* We use the kinematic equations to predict the next state */
+          px_next = px_next + v* cos(psi_next) * latency;
+          py_next = py_next + v* sin(psi_next) * latency;
+          psi_next = psi_next -v/Lf * steer_value *latency;
+          v_next = v + throttle_value * latency;
+          cte_next = cte + v * sin(epsi_next) * latency;
+          epsi_next = epsi -v * steer_value / Lf * latency;
+
           Eigen::VectorXd state(6);	  
-      	  state << 0,0,0,v,cte,epsi;
+      	  state << px_next,py_next,psi_next,v_next,cte_next,epsi_next;
           auto vars = mpc.Solve(state, coeffs);
 
-          const double Lf = 2.67;
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = vars[0]/(deg2rad(25));
+          msgJson["steering_angle"] = vars[0]/(deg2rad(25)*Lf);
           msgJson["throttle"] = vars[1];
           
           //Display the MPC predicted trajectory 
@@ -174,7 +185,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          //this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
